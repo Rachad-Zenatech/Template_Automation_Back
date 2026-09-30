@@ -41,7 +41,7 @@ flowchart TB
         AI["AI Agents / Claude / Cursor (MCP)"]
     end
 
-    subgraph Gateway["FastAPI Server (:8000)"]
+    subgraph Gateway["FastAPI Server (:8900)"]
         AuthMiddleware["Auth & Security Middleware\n(JWT Cookies / Headers)"]
         
         subgraph Routers["API Routers"]
@@ -191,7 +191,7 @@ python scripts/seed_database.py
 
 ```bash
 # Direct uvicorn execution with hot-reloading:
-python -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn server:app --host 0.0.0.0 --port 8900 --reload
 
 # Or using the helper script:
 chmod +x run_server_dev.sh
@@ -237,8 +237,24 @@ docker compose logs -f api
 | `AUTH_COOKIE_NAME` | `access_token` | Name of the authentication cookie |
 | `ALLOWED_EMAIL_DOMAINS` | `*` | Allowed email domains for SSO (e.g. `company.com` or `*`) |
 | `INITIAL_SUPER_ADMIN_EMAILS` | `admin@example.com` | Initial super admin email(s) seeded on setup |
-| `FRONTEND_URL` | `http://localhost:5173` | Allowed frontend URL for CORS and redirects |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,...` | Comma-separated list of CORS origins |
+| `PORT` | `8900` | HTTP port for FastAPI backend service |
+| `FRONTEND_URL` | `http://localhost:6000` | Allowed frontend URL for CORS and redirects |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:6000,...` | Comma-separated list of CORS origins |
+| `JWT_ISSUER` | `zenatech-internal-portal` | JWT issuer identifier for cross-portal SSO |
+| `AUTH_COOKIE_NAME` | `access_token` | Name of authentication cookie (`access_token` or `zenatech_access_token`) |
+| `AUTH_COOKIE_SECURE` | `false` | Force HTTPS secure cookie (`true` in production) |
+| `SESSION_COOKIE_SECURE` | `false` | Force HTTPS session cookie (`true` in production) |
+| `ADMIN_PORTAL_API_URL` | `http://127.0.0.1:8002` | Zenatech Administration Portal API bridge URL |
+| `FINANCE_PORTAL_API_URL` | `http://127.0.0.1:8001` | Enterprise System / Finance Portal API bridge URL |
+| `MA_PORTAL_API_URL` | `http://127.0.0.1:8000` | M&A (M7A) Portal API bridge URL |
+| `CEO_DASHBOARD_API_URL` | `http://127.0.0.1:8005` | CEO Executive Dashboard API bridge URL |
+| `MQTT_HOST` / `MQTT_PORT` | `127.0.0.1` / `1883` | MQTT Broker for real-time presence & status discovery |
+| `RATE_LIMIT_ENABLED` | `true` | Enable in-memory sliding window rate limiting |
+| `RATE_LIMIT_WINDOW_SECONDS` | `60` | Rate limiting evaluation window in seconds |
+| `RATE_LIMIT_REQUESTS_PER_WINDOW`| `1200` | Max requests per window for authenticated session / IP |
+| `RATE_LIMIT_IP_CEILING_PER_WINDOW` | `6000` | Max global requests per IP per window |
+| `RATE_LIMIT_AUTH_PER_WINDOW` | `60` | Max attempts per window for sensitive auth endpoints |
+| `TRUST_FORWARDED_FOR` | `false` | Trust `X-Forwarded-For` header for client IP resolution |
 | `MICROSOFT_CLIENT_ID` | `""` | Microsoft Azure App Registration Client ID |
 | `MICROSOFT_CLIENT_SECRET` | `""` | Microsoft Azure App Registration Client Secret |
 | `MICROSOFT_TENANT_ID` | `common` | Microsoft Azure Tenant ID |

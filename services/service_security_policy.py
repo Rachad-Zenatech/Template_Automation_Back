@@ -76,6 +76,26 @@ TRUSTED_APPLICATIONS = {
             "service_status:read",
         },
     },
+    "automation": {
+        "description": "Zenatech Automation & Integration Template Portal",
+        "allowed_inbound_scopes": {
+            "metrics:read",
+            "approvals:read",
+            "service_status:read",
+            "audit:read",
+            "audit:write",
+        },
+    },
+    "template": {
+        "description": "Zenatech Template Automation Portal",
+        "allowed_inbound_scopes": {
+            "metrics:read",
+            "approvals:read",
+            "service_status:read",
+            "audit:read",
+            "audit:write",
+        },
+    },
 }
 
 # Explicitly Forbidden Operations for non-admin M2M services

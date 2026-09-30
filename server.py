@@ -297,7 +297,7 @@ def _session_identity(request: Request) -> Optional[str]:
         token = auth_header[7:].strip()
     if not token:
         from services.auth_service import AUTH_COOKIE_NAME
-        token = request.cookies.get(AUTH_COOKIE_NAME, "")
+        token = request.cookies.get(AUTH_COOKIE_NAME, "") or request.cookies.get("zenatech_access_token", "")
     if not token:
         return None
     return "session:" + hashlib.sha256(token.encode("utf-8", "replace")).hexdigest()[:32]

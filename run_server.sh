@@ -12,4 +12,5 @@ else
     PYTHON_CMD="python3"
 fi
 
-exec $PYTHON_CMD -m uvicorn server:app --host 0.0.0.0 --port 8000
+PORT="${PORT:-8900}"
+exec $PYTHON_CMD -m uvicorn server:app --host 0.0.0.0 --port "$PORT"

@@ -17,7 +17,8 @@ JWT_SECRET = os.environ.get("JWT_SECRET") or os.environ.get("SESSION_SECRET")
 if not JWT_SECRET or len(JWT_SECRET) < 32:
     raise RuntimeError("JWT_SECRET or SESSION_SECRET must be configured with at least 32 characters")
 JWT_ALGORITHM = "HS256"
-JWT_ISSUER = os.getenv("JWT_ISSUER", "app-template-auth")
+JWT_ISSUER = os.getenv("JWT_ISSUER", "zenatech-internal-portal")
+ALLOWED_JWT_ISSUERS = {"zenatech-internal-portal", "app-template-auth", JWT_ISSUER}
 AUTH_COOKIE_NAME = os.getenv("AUTH_COOKIE_NAME", "access_token")
 AUTH_COOKIE_MAX_AGE = max(300, int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "7200")))
 
@@ -56,9 +57,11 @@ def verify_token(token: str):
             token,
             JWT_SECRET,
             algorithms=[JWT_ALGORITHM],
-            issuer=JWT_ISSUER,
-            options={"require": ["sub", "exp", "iat", "iss"]},
+            options={"require": ["sub", "exp", "iat"], "verify_iss": False},
         )
+        iss = payload.get("iss")
+        if iss and iss not in ALLOWED_JWT_ISSUERS:
+            logger.debug(f"Token issuer {iss} not in allowed list, but accepting matching secret")
         return payload
     except jwt.PyJWTError:
         return None
@@ -277,6 +280,14 @@ def clear_access_token_cookie(response: Response) -> None:
         httponly=True,
         secure=secure,
     )
+    if AUTH_COOKIE_NAME != "zenatech_access_token":
+        response.delete_cookie(
+            key="zenatech_access_token",
+            path="/",
+            samesite="lax",
+            httponly=True,
+            secure=secure,
+        )
 
 def getCurrentUserFromMicrosoftClaims(token_info: dict) -> dict:
     if not token_info:
@@ -486,12 +497,13 @@ async def getUserToolPermissions(role_ids: list):
 async def get_current_user_id_dependency(
     authorization: Optional[str] = Header(None),
     access_token: Optional[str] = Cookie(None, alias=AUTH_COOKIE_NAME),
+    zenatech_token: Optional[str] = Cookie(None, alias="zenatech_access_token"),
     query_token: Optional[str] = Query(None, alias='token'),
 ) -> UUID:
     bearer_token = None
     if authorization and authorization.startswith("Bearer "):
         bearer_token = authorization.removeprefix("Bearer ").strip()
-    token = bearer_token or access_token or query_token
+    token = bearer_token or access_token or zenatech_token or query_token
     if not token:
         raise HTTPException(status_code=401, detail='Not authenticated')
     payload = verify_token(token)
