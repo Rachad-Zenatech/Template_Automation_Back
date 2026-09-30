@@ -9,6 +9,14 @@
 
 A production-ready, high-concurrency enterprise FastAPI backend template featuring hierarchical Role & Permission-Based Access Control (RBAC & PBAC), Microsoft Entra ID SSO, tier-1 distributed in-memory caching with PostgreSQL `LISTEN`/`NOTIFY` invalidation, real-time Server-Sent Events (SSE), FastMCP AI integration, and comprehensive audit observability.
 
+> [!IMPORTANT]
+> **Architecture Decision Required Before Using Template (Web SPA vs Universal App)**
+> **Make this choice BEFORE building your application features:**
+> 1. **Pure Web Application (Default)**: Keep as React 19 + Vite + Tailwind CSS v4 SPA (matching Admin & Finance portals).
+> 2. **Universal Web + Mobile App**: Convert to Expo 57 + React Native Web + Vite (matching CEO Dashboard) *prior to writing any UI code* to avoid component refactoring.
+>
+> *To convert the frontend into a Universal Web + Mobile App, run the conversion prompt provided in [AGENTS.md](file:///c:/dev/template/back/Template_Automation_Back/AGENTS.md) or the Frontend README immediately upon project setup.*
+
 ---
 
 ## 🌟 Key Features
