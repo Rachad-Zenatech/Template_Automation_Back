@@ -106,11 +106,33 @@ async def lifespan(app: FastAPI):
             extra={"event": "graph_sync_disabled"},
         )
 
+    # 4. Initialize Event-Driven MQTT Service Presence & Bus
+    from services import mqtt_presence as mqtt_module
+    from services.mqtt_presence import MqttServicePresence
+    presence_instance = MqttServicePresence(
+        service_name=os.getenv("SERVICE_NAME", "template"),
+        instance_id=os.getenv("SERVICE_INSTANCE_ID", "template-01"),
+    )
+    mqtt_module.template_presence = presence_instance
+    await presence_instance.start()
+
+    # 5. Initialize RabbitMQ Manager (Cross-Service Asynchronous Messaging)
+    from services.rabbitmq_service import rabbitmq_manager
+    await rabbitmq_manager.connect()
+
     logger.info("Application startup complete", extra={"event": "application_started"})
     try:
         yield
     finally:
         logger.info("Application shutdown beginning", extra={"event": "application_stopping"})
+        try:
+            await rabbitmq_manager.close()
+        except Exception as rmq_err:
+            logger.warning(f"Error closing RabbitMQ manager: {rmq_err}")
+        try:
+            await presence_instance.stop()
+        except Exception as mqtt_err:
+            logger.warning(f"Error stopping MQTT presence: {mqtt_err}")
         for task in background_tasks:
             task.cancel()
         await asyncio.gather(*background_tasks, return_exceptions=True)

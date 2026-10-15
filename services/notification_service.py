@@ -52,11 +52,73 @@ async def create_notification(data: NotificationCreate) -> NotificationResponse:
 
     res = NotificationResponse(**row_dict)
     broadcaster.broadcast(res)
+
+    # Publish notification event to MQTT bus for ecosystem integration
+    try:
+        from services.mqtt_presence import publish_template_event
+        publish_template_event(
+            f"template/notifications/{data.user_id}",
+            {
+                "eventType": "template.notification-created",
+                "notificationId": res.id,
+                "userId": str(res.user_id),
+                "type": res.type,
+                "title": res.title,
+                "message": res.message,
+                "linkUrl": res.link_url,
+                "entityType": res.entity_type,
+                "entityId": res.entity_id,
+                "createdAt": res.created_at.isoformat() if hasattr(res.created_at, "isoformat") else str(res.created_at),
+            },
+        )
+    except Exception:
+        pass
+
+    # Publish persistent notification event to RabbitMQ events exchange
+    try:
+        from services.rabbitmq_service import rabbitmq_manager
+        asyncio.create_task(
+            rabbitmq_manager.publish_template_event(
+                "notification.created",
+                {
+                    "eventType": "template.notification-created",
+                    "notificationId": res.id,
+                    "userId": str(res.user_id),
+                    "type": res.type,
+                    "title": res.title,
+                    "message": res.message,
+                    "linkUrl": res.link_url,
+                    "entityType": res.entity_type,
+                    "entityId": res.entity_id,
+                    "createdAt": res.created_at.isoformat() if hasattr(res.created_at, "isoformat") else str(res.created_at),
+                },
+            )
+        )
+    except Exception:
+        pass
+
+    # Publish cross-application event to CEO Dashboard
+    try:
+        from services.ceo_event_publisher import publish_ceo_event
+        publish_ceo_event(
+            event_type="template.notification.created",
+            source="template",
+            entity_id=str(res.id),
+            data={
+                "userId": str(res.user_id),
+                "type": res.type,
+                "title": res.title,
+                "message": res.message,
+            },
+        )
+    except Exception:
+        pass
+
     return res
 
 
 def broadcast_workflow_sync(entity_type: str = "PurchaseRequest", entity_id: str = ""):
-    """Broadcast an instant workflow update to all active SSE client streams."""
+    """Broadcast an instant workflow update to all active SSE client streams, MQTT, and RabbitMQ."""
     from datetime import datetime
     sync_event = NotificationResponse(
         id=0,
@@ -75,6 +137,48 @@ def broadcast_workflow_sync(entity_type: str = "PurchaseRequest", entity_id: str
         created_at=datetime.utcnow()
     )
     broadcaster.broadcast(sync_event)
+
+    try:
+        from services.mqtt_presence import publish_template_event
+        publish_template_event(
+            "template/workflow-sync",
+            {
+                "eventType": "template.workflow-sync",
+                "entityType": entity_type,
+                "entityId": str(entity_id),
+            },
+        )
+    except Exception:
+        pass
+
+    try:
+        from services.rabbitmq_service import rabbitmq_manager
+        asyncio.create_task(
+            rabbitmq_manager.publish_template_event(
+                "workflow.sync",
+                {
+                    "eventType": "template.workflow-sync",
+                    "entityType": entity_type,
+                    "entityId": str(entity_id),
+                },
+            )
+        )
+    except Exception:
+        pass
+
+    try:
+        from services.ceo_event_publisher import publish_ceo_event
+        publish_ceo_event(
+            event_type="template.workflow.sync",
+            source="template",
+            entity_id=str(entity_id),
+            data={
+                "entityType": entity_type,
+                "entityId": str(entity_id),
+            },
+        )
+    except Exception:
+        pass
 
 
 async def get_recent_notifications(user_id: str, limit: int = 20) -> List[NotificationResponse]:
