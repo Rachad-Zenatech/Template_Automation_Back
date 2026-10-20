@@ -253,7 +253,6 @@ async def delete_user(user_id: UUID, actor_id: UUID = None):
             sql = "UPDATE users SET deleted_at = now(), deleted_by = $1, is_active = false WHERE id = $2 RETURNING *"
             new_row = await conn.fetchrow(sql, actor_id, user_id)
             await conn.execute("UPDATE user_roles SET is_active = false WHERE user_id = $1", user_id)
-            await conn.execute("UPDATE workflow_assignments SET active = false WHERE user_id = $1", user_id)
             await log_audit(
                 conn,
                 actor_id,
@@ -299,7 +298,6 @@ async def bulk_delete_users(user_ids: List[UUID], actor_id: UUID = None):
             """
             updated_rows = await conn.fetch(sql, actor_id, target_ids)
             await conn.execute("UPDATE user_roles SET is_active = false WHERE user_id = ANY($1)", target_ids)
-            await conn.execute("UPDATE workflow_assignments SET active = false WHERE user_id = ANY($1)", target_ids)
 
             old_map = {r["id"]: r for r in rows}
             for u in updated_rows:

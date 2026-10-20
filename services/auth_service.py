@@ -157,20 +157,10 @@ async def get_my_permissions(user_id: UUID):
                     page_perms[pc] = []
                 if ac not in page_perms[pc]:
                     page_perms[pc].append(ac)
-    # Fetch active workflow roles for this user
-    wf_roles_sql = """
-        SELECT DISTINCT role
-        FROM workflow_assignments
-        WHERE (user_id = $1 OR (user_ids IS NOT NULL AND $1 = ANY(user_ids)))
-        AND active = true
-    """
-    wf_rows = await fetch_all(wf_roles_sql, user_id)
-    wf_roles = [w["role"] for w in wf_rows if w.get("role") and not w["role"].startswith("DELETED_")]
 
     result = {
         "user": dict(user),
         "roles": [dict(r) for r in roles],
-        "workflow_roles": wf_roles,
         "navigation_permissions": page_perms,
         "mcp_tool_permissions": mcp_perms
     }
@@ -211,7 +201,7 @@ async def resolve_user_department(user_id: UUID) -> str:
     Resolves user department matching the frontend logic:
     1. Direct users.department
     2. Direct role.department for assigned active roles
-    3. Parent role hierarchy (e.g. Requester -> CEO -> Executive)
+    3. Parent role hierarchy (e.g. User -> Manager -> Executive)
     4. Super Admin -> Executive
     5. Fallback -> General
     """
@@ -316,7 +306,7 @@ def getCurrentUserFromMicrosoftClaims(token_info: dict) -> dict:
 async def upsertMicrosoftUser(claims: dict, graph_profile: Optional[dict] = None):
     """Create or update the local user record for an authenticated Microsoft
     Entra identity. Automatically activates @zenatech.com users and assigns
-    the default REQUESTER role.
+    the default USER role.
     """
     from postgresql_db.database import get_pool
 
@@ -403,26 +393,26 @@ async def upsertMicrosoftUser(claims: dict, graph_profile: Optional[dict] = None
             """, oid, claims.get('tid'), claims.get('sub'), clean_email, clean_name,
                  department, job_title, account_enabled, graph_synced_at)
 
-        # Ensure REQUESTER role is available in roles table
-        requester_role = await conn.fetchrow("""
+        # Ensure USER role is available in roles table
+        user_role = await conn.fetchrow("""
             SELECT id FROM roles
-            WHERE UPPER(code) = 'REQUESTER' OR UPPER(name) = 'REQUESTER'
-            ORDER BY (UPPER(code) = 'REQUESTER') DESC
+            WHERE UPPER(code) = 'USER' OR UPPER(name) = 'STANDARD USER'
+            ORDER BY (UPPER(code) = 'USER') DESC
             LIMIT 1
         """)
-        if not requester_role:
-            requester_role = await conn.fetchrow("""
-                INSERT INTO roles (code, name, is_system_role, is_active)
-                VALUES ('REQUESTER', 'Requester', true, true)
+        if not user_role:
+            user_role = await conn.fetchrow("""
+                INSERT INTO roles (code, name, description, is_system_role, is_active)
+                VALUES ('USER', 'Standard User', 'Standard user with view access', false, true)
                 ON CONFLICT (code) DO UPDATE SET is_active = true
                 RETURNING id
             """)
 
         if user:
             if was_deleted:
-                # If previously deleted, revoke all old roles and reset solely to REQUESTER
+                # If previously deleted, revoke all old roles and reset solely to USER
                 await conn.execute("UPDATE user_roles SET is_active = false WHERE user_id = $1", user["id"])
-                if requester_role:
+                if user_role:
                     await conn.execute(
                         """
                         INSERT INTO user_roles (user_id, role_id, assigned_at, is_active)
@@ -430,15 +420,15 @@ async def upsertMicrosoftUser(claims: dict, graph_profile: Optional[dict] = None
                         ON CONFLICT (user_id, role_id)
                         DO UPDATE SET is_active = true, assigned_at = now()
                         """,
-                        user["id"], requester_role["id"],
+                        user["id"], user_role["id"],
                     )
             else:
-                # For new or unassigned users, ensure REQUESTER role is active
+                # For new or unassigned users, ensure USER role is active
                 has_role = await conn.fetchval(
                     "SELECT 1 FROM user_roles WHERE user_id = $1 AND is_active = true LIMIT 1",
                     user["id"]
                 )
-                if not has_role and requester_role:
+                if not has_role and user_role:
                     await conn.execute(
                         """
                         INSERT INTO user_roles (user_id, role_id, assigned_at, is_active)
@@ -446,7 +436,7 @@ async def upsertMicrosoftUser(claims: dict, graph_profile: Optional[dict] = None
                         ON CONFLICT (user_id, role_id)
                         DO UPDATE SET is_active = true, assigned_at = now()
                         """,
-                        user["id"], requester_role["id"],
+                        user["id"], user_role["id"],
                     )
             await emit_cache_invalidation(scope="permissions", key=f"perms:{user['id']}")
             return dict(user)

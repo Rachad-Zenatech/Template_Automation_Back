@@ -328,9 +328,9 @@ def flatten_manager_chain(manager_obj: Optional[dict]) -> list:
 
 
 async def fetch_user_manager_chain(user_oid: str, access_token: Optional[str] = None) -> tuple:
-    """Fetch requester profile and ordered manager chain from Microsoft Graph.
+    """Fetch user profile and ordered manager chain from Microsoft Graph.
 
-    Returns (requester_profile, [immediate_manager, ..., company_root_manager]).
+    Returns (user_profile, [immediate_manager, ..., company_root_manager]).
     Order of chain:
       Index 0: Immediate manager
       ...
@@ -355,7 +355,7 @@ async def fetch_user_manager_chain(user_oid: str, access_token: Optional[str] = 
         "$expand": f"manager($levels=max;$select={select_fields})",
     }
 
-    requester_profile = None
+    user_profile = None
     manager_chain = []
 
     try:
@@ -363,7 +363,7 @@ async def fetch_user_manager_chain(user_oid: str, access_token: Optional[str] = 
             resp = await client.get(url, params=params, headers=headers)
             if resp.status_code == 200:
                 body = resp.json()
-                requester_profile = _normalize_profile(body)
+                user_profile = _normalize_profile(body)
                 manager_chain = _extract_nested_managers(body.get("manager"))
             elif resp.status_code == 404:
                 return None, []
@@ -371,7 +371,7 @@ async def fetch_user_manager_chain(user_oid: str, access_token: Optional[str] = 
         logger.warning(f"Graph manager expand request failed: {exc}")
 
     # Fallback loop: if $expand=manager($levels=max) returned only 1 level or is unsupported
-    if requester_profile and (not manager_chain or len(manager_chain) <= 1):
+    if user_profile and (not manager_chain or len(manager_chain) <= 1):
         try:
             curr_id = manager_chain[0]["object_id"] if manager_chain else user_oid
             visited_ids = {user_oid}
@@ -398,7 +398,7 @@ async def fetch_user_manager_chain(user_oid: str, access_token: Optional[str] = 
         except Exception as exc:
             logger.debug(f"Sequential manager walk failed: {exc}")
 
-    return requester_profile, manager_chain
+    return user_profile, manager_chain
 
 
 async def get_cached_or_live_hierarchy(user_oid: str, access_token: Optional[str] = None) -> tuple:
