@@ -22,14 +22,14 @@ from pydantic import BaseModel, Field
 from starlette.middleware.sessions import SessionMiddleware
 
 from postgresql_db.database import close_pool, create_pool, fetch_one, get_pool
-from services.logging_service import (
+from services.shared.logging_service import (
     asyncio_exception_handler,
     configure_logging,
     log_background_task_result,
     request_id_ctx,
 )
-from services.cache_service import start_cache_invalidation_listener
-from services.auth_service import (
+from services.shared.cache_service import start_cache_invalidation_listener
+from services.shared.auth_service import (
     current_user_id_ctx,
     get_current_user_id_dependency,
 )
@@ -45,8 +45,8 @@ from tools.graph_router import router as graph_router
 
 # MCP tools & AI functions
 from mcp_tools import register_all as register_mcp_tools, sync_mcp_tools_to_vector_db
-from services import ai_observability, assistant_chat_service
-from services.graph_sync_job import graph_sync_loop
+from services.ai import ai_observability, assistant_chat_service
+from services.microsoft_graph.graph_sync_job import graph_sync_loop
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -118,8 +118,8 @@ async def lifespan(app: FastAPI):
     background_tasks.append(trace_task)
 
     # 4. Initialize Event-Driven MQTT Service Presence & Bus
-    from services import mqtt_presence as mqtt_module
-    from services.mqtt_presence import MqttServicePresence
+    from services.notifications import mqtt_presence as mqtt_module
+    from services.notifications.mqtt_presence import MqttServicePresence
     presence_instance = MqttServicePresence(
         service_name=os.getenv("SERVICE_NAME", "template"),
         instance_id=os.getenv("SERVICE_INSTANCE_ID", "template-01"),
@@ -128,7 +128,7 @@ async def lifespan(app: FastAPI):
     await presence_instance.start()
 
     # 5. Initialize RabbitMQ Manager (Cross-Service Asynchronous Messaging)
-    from services.rabbitmq_service import rabbitmq_manager
+    from services.notifications.rabbitmq_service import rabbitmq_manager
     await rabbitmq_manager.connect()
 
     logger.info("Application startup complete", extra={"event": "application_started"})
@@ -210,7 +210,7 @@ async def ai_chat(req: ChatRequest, user_id: UUID = Depends(get_current_user_id)
         )
     if not prepared.blocked and prepared.cached_answer is None:
         # Counts toward the daily AI limits (429 with when it frees up).
-        from services import ai_usage_service
+        from services.ai import ai_usage_service
         await ai_usage_service.reserve("CHAT", user_id)
     try:
         async def stream_generator():
@@ -348,7 +348,7 @@ def _session_identity(request: Request) -> Optional[str]:
     if auth_header[:7].lower() == "bearer ":
         token = auth_header[7:].strip()
     if not token:
-        from services.auth_service import AUTH_COOKIE_NAME
+        from services.shared.auth_service import AUTH_COOKIE_NAME
         token = request.cookies.get(AUTH_COOKIE_NAME, "") or request.cookies.get("zenatech_access_token", "")
     if not token:
         return None
