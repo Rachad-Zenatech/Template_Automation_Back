@@ -11,7 +11,7 @@ import asyncio
 # Ensure project root is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from postgresql_db.setup_pbac_schema import setup
+from postgresql_db.schemas.setup_pbac_schema import setup
 
 if __name__ == "__main__":
     print("Starting template database initialization...")

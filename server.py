@@ -70,12 +70,12 @@ async def lifespan(app: FastAPI):
         await create_pool()
         # Ensure schema tables exist
         try:
-            from postgresql_db.setup_pbac_schema import setup as setup_schema
+            from postgresql_db.schemas.setup_pbac_schema import setup as setup_schema
             # Non-blocking schema initialization check
         except Exception as schema_err:
             logger.warning(f"Schema verification note: {schema_err}")
         try:
-            from postgresql_db.setup_ai_observability_schema import setup as setup_ai_observability_schema
+            from postgresql_db.schemas.setup_ai_observability_schema import setup as setup_ai_observability_schema
             await setup_ai_observability_schema()
         except Exception as ai_err:
             logger.warning(f"AI observability schema setup note: {ai_err}")
