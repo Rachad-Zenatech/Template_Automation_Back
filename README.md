@@ -173,8 +173,9 @@ GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ### 4. Run Development Server
+Or directly via Uvicorn (with `--timeout-graceful-shutdown 2` to release port 8900 cleanly on exit):
 ```bash
-uvicorn server:app --host 0.0.0.0 --port 8900 --reload
+uvicorn server:app --host 0.0.0.0 --port 8900 --reload --timeout-graceful-shutdown 2
 ```
 Open API docs at `http://localhost:8900/docs`.
 
