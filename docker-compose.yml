@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:alpine
+    container_name: template_db_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: template_portal_dev
+    ports:
+      - "3005:5432"
+    volumes:
+      - template_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d template_portal_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  template_postgres_data:
+
+
