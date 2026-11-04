@@ -68,17 +68,25 @@ async def lifespan(app: FastAPI):
     loop.set_exception_handler(asyncio_exception_handler)
     try:
         await create_pool()
-        # Ensure schema tables exist
-        try:
-            from postgresql_db.schemas.setup_pbac_schema import setup as setup_schema
-            # Non-blocking schema initialization check
-        except Exception as schema_err:
-            logger.warning(f"Schema verification note: {schema_err}")
-        try:
-            from postgresql_db.schemas.setup_ai_observability_schema import setup as setup_ai_observability_schema
-            await setup_ai_observability_schema()
-        except Exception as ai_err:
-            logger.warning(f"AI observability schema setup note: {ai_err}")
+        # Ensure schema tables exist (auto-runs in dev, explicit/pre-deploy in production)
+        should_auto_migrate = _env_flag(
+            "AUTO_MIGRATE_SCHEMA",
+            "true" if os.getenv("APP_ENV", "development") == "development" else "false",
+        )
+        if should_auto_migrate:
+            logger.info("Running automated schema verification and migration", extra={"event": "schema_migration_start"})
+            try:
+                from postgresql_db.schemas.setup_pbac_schema import setup as setup_schema
+                # Non-blocking schema initialization check
+            except Exception as schema_err:
+                logger.warning(f"Schema verification note: {schema_err}")
+            try:
+                from postgresql_db.schemas.setup_ai_observability_schema import setup as setup_ai_observability_schema
+                await setup_ai_observability_schema()
+            except Exception as ai_err:
+                logger.warning(f"AI observability schema setup note: {ai_err}")
+        else:
+            logger.info("Skipping startup schema auto-migration (AUTO_MIGRATE_SCHEMA=false or production mode)", extra={"event": "schema_migration_skipped"})
     except Exception:
         logger.exception("Application startup failed", extra={"event": "application_startup_failed"})
         raise
