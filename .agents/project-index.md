@@ -17,26 +17,26 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - postgresql_db/schemas/setup_ai_observability_schema.py (93 lines) - AI observability, caching and usage limits: trace spans for every AI step (model calls, embeddings, tool calls, guard checks, cache looku...
 - postgresql_db/schemas/setup_graph_sync_schema.py (54 lines) - setup graph sync schema (schemas)
 - postgresql_db/schemas/setup_pbac_schema.py (371 lines) - setup pbac schema (schemas)
-- server.py (552 lines) - server
-- services/ai/ai_guardrails.py (249 lines) - AI guardrails: screening what goes into the model and redacting personal data from what comes out.
-- services/ai/ai_observability.py (368 lines) - AI observability: a trace span for every model call, embedding, retrieval, cache lookup, guard check and tool call, plus a prompt log of ...
-- services/ai/ai_usage_service.py (141 lines) - AI Usage Limits Caps how often Gemini runs, so one person (or a stuck loop) can't use up the provider quota or run up cost.
-- services/ai/assistant_chat_service.py (252 lines) - Assistant chat: answers questions about the portal, streamed as SSE.
-- services/ai/gemini_service.py (123 lines) - gemini service (ai)
-- services/ai/model_router.py (98 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
-- services/ai/semantic_cache.py (205 lines) - Semantic cache: reuses an earlier AI answer when a new question means the same thing, so repeated questions don't spend Gemini quota.
+- server.py (553 lines) - server
+- services/ai/core/assistant_chat_service.py (254 lines) - Assistant chat: answers questions about the portal, streamed as SSE.
+- services/ai/core/gemini_service.py (123 lines) - gemini service (ai core)
+- services/ai/core/model_router.py (98 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
+- services/ai/core/semantic_cache.py (205 lines) - Semantic cache: reuses an earlier AI answer when a new question means the same thing, so repeated questions don't spend Gemini quota.
+- services/ai/observability/ai_guardrails.py (249 lines) - AI guardrails: screening what goes into the model and redacting personal data from what comes out.
+- services/ai/observability/ai_observability.py (368 lines) - AI observability: a trace span for every model call, embedding, retrieval, cache lookup, guard check and tool call, plus a prompt log of ...
+- services/ai/observability/ai_usage_service.py (141 lines) - AI Usage Limits Caps how often Gemini runs, so one person (or a stuck loop) can't use up the provider quota or run up cost.
 - services/microsoft_graph/graph_service.py (420 lines) - Microsoft Graph API client for employee profile sync.
 - services/microsoft_graph/graph_sync_job.py (132 lines) - Periodic Microsoft Graph sync for already-known employees.
 - services/notifications/ceo_event_publisher.py (50 lines) - Cross-application event publisher for CEO Dashboard integration.
 - services/notifications/mqtt_presence.py (273 lines) - MQTT Service Presence & Event-Driven Messaging Component for Template Automation.
 - services/notifications/notification_service.py (178 lines) - notification service (notifications)
 - services/notifications/rabbitmq_service.py (401 lines) - RabbitMQ Service & Topology Manager for template Management.
-- services/shared/audit_service.py (127 lines) - audit service (shared)
-- services/shared/auth_service.py (641 lines) - auth service (shared)
-- services/shared/cache_service.py (183 lines) - cache service (shared)
-- services/shared/logging_service.py (118 lines) - Structured application logging suitable for container stdout and CloudWatch Logs.
-- services/shared/rbac_service.py (687 lines) - Utility for audit logging
-- services/shared/service_security_policy.py (241 lines) - Enterprise Application Security & Scope Authorization Policy Defines the strict Application-to-Application Access Matrix (Machine-to-Mach...
+- services/shared/auth/auth_service.py (641 lines) - auth service (shared auth)
+- services/shared/auth/rbac_service.py (687 lines) - Utility for audit logging
+- services/shared/auth/service_security_policy.py (241 lines) - Enterprise Application Security & Scope Authorization Policy Defines the strict Application-to-Application Access Matrix (Machine-to-Mach...
+- services/shared/core/audit_service.py (127 lines) - audit service (shared core)
+- services/shared/core/cache_service.py (183 lines) - cache service (shared core)
+- services/shared/core/logging_service.py (118 lines) - Structured application logging suitable for container stdout and CloudWatch Logs.
 - tools/microsoft_graph/graph_router.py (46 lines) - Graph User Search Router Exposes a search endpoint that proxies Microsoft Graph /v1.0/users?$search=...
 - tools/notifications/notification_router.py (81 lines) - notification router (notifications)
 - tools/shared/auth_router.py (312 lines) - auth router (shared)

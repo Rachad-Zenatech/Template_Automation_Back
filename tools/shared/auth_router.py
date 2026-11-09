@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
-from services.shared.auth_service import (
+from services.shared.auth.auth_service import (
     create_access_token,
     getCurrentUserFromMicrosoftClaims,
     upsertMicrosoftUser,
@@ -19,7 +19,7 @@ from services.shared.auth_service import (
 )
 from services.microsoft_graph.graph_service import fetch_me_profile
 from tools.shared.rbac_router import get_current_user_id
-from services.shared.rbac_service import log_login_activity
+from services.shared.auth.rbac_service import log_login_activity
 from postgresql_db.database import get_pool
 from uuid import UUID
 
@@ -243,8 +243,8 @@ async def logout(request: Request):
 
     if token:
         import jwt
-        from services.shared.auth_service import JWT_SECRET, JWT_ALGORITHM, JWT_ISSUER
-        from services.shared.cache_service import emit_cache_invalidation
+        from services.shared.auth.auth_service import JWT_SECRET, JWT_ALGORITHM, JWT_ISSUER
+        from services.shared.core.cache_service import emit_cache_invalidation
         try:
             payload = jwt.decode(
                 token,

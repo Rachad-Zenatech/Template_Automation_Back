@@ -101,7 +101,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 ## postgresql_db/schemas/setup_pbac_schema.py (371 lines) - setup pbac schema (schemas)
 - `setup` (def)
 
-## server.py (552 lines) - server
+## server.py (553 lines) - server
 - `_graph_background_sync_enabled` (def)
 - `_env_flag` (def)
 - `lifespan` (def)
@@ -121,7 +121,48 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `_should_log_request_completion` (def)
 - `request_observability` (def)
 
-## services/ai/ai_guardrails.py (249 lines) - AI guardrails: screening what goes into the model and redacting personal data from what comes out.
+## services/ai/core/assistant_chat_service.py (254 lines) - Assistant chat: answers questions about the portal, streamed as SSE.
+- `_get_client` (def)
+- `_sse` (def)
+- `PreparedChat` (class)
+    - `blocked` (def)
+    - `cached_answer` (def)
+- `_scope` (def) - Who can share a cached answer: people allowed the same tools.
+- `prepare` (def) - Screen the input and look for a cached answer (no Gemini quota is used here).
+- `_contents` (def)
+- `_stream_round` (def) - One model turn, streamed.
+- `stream` (def) - The SSE events for a prepared chat.
+
+## services/ai/core/gemini_service.py (123 lines) - gemini service (ai core)
+- `_normalize_ai_model_name` (def) - Normalizes a model name from the environment variable list
+- `get_gemini_fallback_models` (def) - Retrieves and normalizes the list of available Gemini models
+- `is_rotatable_model_error` (def) - Determines if a given exception represents a rate limit, quota exhaustion,
+- `generate_content_with_fallback` (def) - A robust wrapper around client.models.generate_content that automatically
+
+## services/ai/core/model_router.py (98 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
+- `Route` (class)
+- `fallback_models` (def) - Every configured Gemini model (GEMINI_AVAILABLE_MODELS), retired ones left out, in the configured order.
+- `is_rotatable_model_error` (def) - A rate limit, exhausted quota, overloaded or retired model: worth trying the next model.
+- `enabled` (def)
+- `tier_models` (def)
+- `base_tier` (def)
+- `route` (def) - The models to try, in order, for this request, and why that tier was chosen.
+
+## services/ai/core/semantic_cache.py (205 lines) - Semantic cache: reuses an earlier AI answer when a new question means the same thing, so repeated questions don't spend Gemini quota.
+- `_env_float` (def)
+- `is_enabled` (def)
+- `Hit` (class)
+- `Lookup` (class) - What a lookup learned, so storing the answer afterwards doesn't embed the question again.
+- `normalise` (def)
+- `numbers` (def)
+- `_gemini_client` (def)
+- `_embed` (def)
+- `lookup` (def) - A cached answer to the question, if any.
+- `_lookup` (def)
+- `store` (def) - Cache an answer for the question of an earlier lookup.
+- `clear` (def) - Drop cached answers (one feature's, or all) when what they were built from has changed.
+
+## services/ai/observability/ai_guardrails.py (249 lines) - AI guardrails: screening what goes into the model and redacting personal data from what comes out.
 - `_threshold` (def)
 - `GuardResult` (class)
     - `blocked` (def)
@@ -140,7 +181,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
     - `feed` (def)
     - `flush` (def)
 
-## services/ai/ai_observability.py (368 lines) - AI observability: a trace span for every model call, embedding, retrieval, cache lookup, guard check and tool call, plus a prompt log of ...
+## services/ai/observability/ai_observability.py (368 lines) - AI observability: a trace span for every model call, embedding, retrieval, cache lookup, guard check and tool call, plus a prompt log of ...
 - `_env_int` (def)
 - `Span` (class)
 - `_get_queue` (def)
@@ -163,7 +204,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `flush` (def) - Write whatever is still queued (on shutdown, before the pool closes).
 - `writer_loop` (def) - Wait for records and write each burst in one batch; hourly (when idle) apply retention.
 
-## services/ai/ai_usage_service.py (141 lines) - AI Usage Limits Caps how often Gemini runs, so one person (or a stuck loop) can't use up the provider quota or run up cost.
+## services/ai/observability/ai_usage_service.py (141 lines) - AI Usage Limits Caps how often Gemini runs, so one person (or a stuck loop) can't use up the provider quota or run up cost.
 - `_env_int` (def)
 - `limit` (def)
 - `per_user_minute` (def)
@@ -174,47 +215,6 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `_count` (def)
 - `reserve` (def) - Record one Gemini call, or raise AiLimitExceeded (HTTP 429) with a message saying when it frees up.
 - `usage_for` (def) - What a person has left, per feature, for showing in the UI.
-
-## services/ai/assistant_chat_service.py (252 lines) - Assistant chat: answers questions about the portal, streamed as SSE.
-- `_get_client` (def)
-- `_sse` (def)
-- `PreparedChat` (class)
-    - `blocked` (def)
-    - `cached_answer` (def)
-- `_scope` (def) - Who can share a cached answer: people allowed the same tools.
-- `prepare` (def) - Screen the input and look for a cached answer (no Gemini quota is used here).
-- `_contents` (def)
-- `_stream_round` (def) - One model turn, streamed.
-- `stream` (def) - The SSE events for a prepared chat.
-
-## services/ai/gemini_service.py (123 lines) - gemini service (ai)
-- `_normalize_ai_model_name` (def) - Normalizes a model name from the environment variable list
-- `get_gemini_fallback_models` (def) - Retrieves and normalizes the list of available Gemini models
-- `is_rotatable_model_error` (def) - Determines if a given exception represents a rate limit, quota exhaustion,
-- `generate_content_with_fallback` (def) - A robust wrapper around client.models.generate_content that automatically
-
-## services/ai/model_router.py (98 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
-- `Route` (class)
-- `fallback_models` (def) - Every configured Gemini model (GEMINI_AVAILABLE_MODELS), retired ones left out, in the configured order.
-- `is_rotatable_model_error` (def) - A rate limit, exhausted quota, overloaded or retired model: worth trying the next model.
-- `enabled` (def)
-- `tier_models` (def)
-- `base_tier` (def)
-- `route` (def) - The models to try, in order, for this request, and why that tier was chosen.
-
-## services/ai/semantic_cache.py (205 lines) - Semantic cache: reuses an earlier AI answer when a new question means the same thing, so repeated questions don't spend Gemini quota.
-- `_env_float` (def)
-- `is_enabled` (def)
-- `Hit` (class)
-- `Lookup` (class) - What a lookup learned, so storing the answer afterwards doesn't embed the question again.
-- `normalise` (def)
-- `numbers` (def)
-- `_gemini_client` (def)
-- `_embed` (def)
-- `lookup` (def) - A cached answer to the question, if any.
-- `_lookup` (def)
-- `store` (def) - Cache an answer for the question of an earlier lookup.
-- `clear` (def) - Drop cached answers (one feature's, or all) when what they were built from has changed.
 
 ## services/microsoft_graph/graph_service.py (420 lines) - Microsoft Graph API client for employee profile sync.
 - `_normalize_profile` (def)
@@ -300,11 +300,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
     - `_consume_in_memory` (def)
     - `close` (def)
 
-## services/shared/audit_service.py (127 lines) - audit service (shared)
-- `log_audit_event` (def) - Records an event in the audit_logs table.
-- `get_audit_logs` (def)
-
-## services/shared/auth_service.py (641 lines) - auth service (shared)
+## services/shared/auth/auth_service.py (641 lines) - auth service (shared auth)
 - `_update_last_activity_async` (def)
 - `create_access_token` (def)
 - `verify_token` (def)
@@ -328,28 +324,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `requireToolAccess` (def)
     - `dependency` (def)
 
-## services/shared/cache_service.py (183 lines) - cache service (shared)
-- `AsyncInMemoryCache` (class) - Lightweight in-memory cache with TTL expiration, LRU eviction, and key/prefix invalidation.
-    - `__init__` (def)
-    - `get` (def)
-    - `set` (def)
-    - `invalidate` (def)
-    - `invalidate_prefix` (def)
-    - `clear` (def)
-- `_apply_cache_invalidation` (def) - Apply invalidation to local process in-memory caches.
-- `emit_cache_invalidation` (def) - Broadcast a cache invalidation event.
-- `_create_notification_handler` (def) - Create a callback for PostgreSQL NOTIFY events received from other workers.
-    - `handle_notification` (def)
-- `start_cache_invalidation_listener` (def) - Background worker that listens for PostgreSQL NOTIFY events on CACHE_CHANNEL.
-
-## services/shared/logging_service.py (118 lines) - Structured application logging suitable for container stdout and CloudWatch Logs.
-- `JsonFormatter` (class) - Emit one compact JSON object per line for CloudWatch Logs Insights.
-    - `format` (def)
-- `configure_logging` (def) - Configure stdout once; AWS container log drivers collect this stream.
-- `log_background_task_result` (def) - Log a task that exits unexpectedly instead of losing its exception.
-- `asyncio_exception_handler` (def) - Capture detached asyncio failures that would otherwise only reach stderr.
-
-## services/shared/rbac_service.py (687 lines) - Utility for audit logging
+## services/shared/auth/rbac_service.py (687 lines) - Utility for audit logging
 - `log_audit` (def)
 - `get_audit_logs` (def)
 - `_public_user` (def)
@@ -378,10 +353,35 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `get_role_permission_groups` (def)
 - `update_role_permission_groups` (def)
 
-## services/shared/service_security_policy.py (241 lines) - Enterprise Application Security & Scope Authorization Policy Defines the strict Application-to-Application Access Matrix (Machine-to-Mach...
+## services/shared/auth/service_security_policy.py (241 lines) - Enterprise Application Security & Scope Authorization Policy Defines the strict Application-to-Application Access Matrix (Machine-to-Mach...
 - `require_application_scope` (def) - FastAPI dependency that enforces Application-Level Scope authorization.
     - `_scope_guard` (def)
 - `generate_scoped_outbound_token` (def) - Generates a minimal, scope-restricted token for sending requests to another application.
+
+## services/shared/core/audit_service.py (127 lines) - audit service (shared core)
+- `log_audit_event` (def) - Records an event in the audit_logs table.
+- `get_audit_logs` (def)
+
+## services/shared/core/cache_service.py (183 lines) - cache service (shared core)
+- `AsyncInMemoryCache` (class) - Lightweight in-memory cache with TTL expiration, LRU eviction, and key/prefix invalidation.
+    - `__init__` (def)
+    - `get` (def)
+    - `set` (def)
+    - `invalidate` (def)
+    - `invalidate_prefix` (def)
+    - `clear` (def)
+- `_apply_cache_invalidation` (def) - Apply invalidation to local process in-memory caches.
+- `emit_cache_invalidation` (def) - Broadcast a cache invalidation event.
+- `_create_notification_handler` (def) - Create a callback for PostgreSQL NOTIFY events received from other workers.
+    - `handle_notification` (def)
+- `start_cache_invalidation_listener` (def) - Background worker that listens for PostgreSQL NOTIFY events on CACHE_CHANNEL.
+
+## services/shared/core/logging_service.py (118 lines) - Structured application logging suitable for container stdout and CloudWatch Logs.
+- `JsonFormatter` (class) - Emit one compact JSON object per line for CloudWatch Logs Insights.
+    - `format` (def)
+- `configure_logging` (def) - Configure stdout once; AWS container log drivers collect this stream.
+- `log_background_task_result` (def) - Log a task that exits unexpectedly instead of losing its exception.
+- `asyncio_exception_handler` (def) - Capture detached asyncio failures that would otherwise only reach stderr.
 
 ## tools/microsoft_graph/graph_router.py (46 lines) - Graph User Search Router Exposes a search endpoint that proxies Microsoft Graph /v1.0/users?$search=...
 - `GraphUserResult` (class)
