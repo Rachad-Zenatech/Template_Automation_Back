@@ -10,8 +10,8 @@ Architectural standards are in `.agents/rules/` and loaded only when relevant.
 Every AI agent working in this repository MUST follow this sequence before touching or reading code:
 1. **Never scan, glob, or read arbitrary source files or directories.**
 2. **First step for orientation:** Read `.agents/project-index.md` to identify the relevant module and directory layout.
-3. **Second step for symbols & functions:** Grep `.agents/code-map.md` for the exact function, class, or route name.
-4. **Third step for reading code:** Read ONLY the specific line range identified in `.agents/code-map.md` (never read entire files >400 lines).
+3. **Second step for symbols & functions:** Grep `.agents/code-map/` (one small file per source folder, listed in `.agents/code-map.md`) for the exact function, class, or route name. Never read a map file whole.
+4. **Third step for reading code:** Read ONLY the line range the map gives (each symbol shows its start line, `L<n>`; read to the next symbol's line). Never read entire files >400 lines.
 5. **After adding, moving, or renaming functions:** Regenerate the map immediately via `node .agents/gen_code_map.mjs`.
 
 Violating this order wastes context budget and violates repository execution rules.
