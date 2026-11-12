@@ -1,0 +1,17 @@
+{
+  "limit": 500,
+  "files": {
+    "server.py": {
+      "max_lines": 552,
+      "reason": "Over the limit when the check was introduced; split it when you next work on it."
+    },
+    "services/shared/auth/auth_service.py": {
+      "max_lines": 640,
+      "reason": "Over the limit when the check was introduced; split it when you next work on it."
+    },
+    "services/shared/auth/rbac_service.py": {
+      "max_lines": 686,
+      "reason": "Over the limit when the check was introduced; split it when you next work on it."
+    }
+  }
+}
