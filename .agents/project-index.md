@@ -17,7 +17,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - postgresql_db/schemas/setup_ai_observability_schema.py (93 lines) - AI observability, caching and usage limits: trace spans for every AI step (model calls, embeddings, tool calls, guard checks, cache looku...
 - postgresql_db/schemas/setup_graph_sync_schema.py (54 lines) - setup graph sync schema (schemas)
 - postgresql_db/schemas/setup_pbac_schema.py (371 lines) - setup pbac schema (schemas)
-- server.py (553 lines) - server
+- server.py (551 lines) - server
 - services/ai/core/assistant_chat_service.py (254 lines) - Assistant chat: answers questions about the portal, streamed as SSE.
 - services/ai/core/gemini_service.py (128 lines) - gemini service (ai core)
 - services/ai/core/model_router.py (85 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
@@ -33,6 +33,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - services/notifications/rabbitmq_service.py (401 lines) - RabbitMQ Service & Topology Manager for template Management.
 - services/shared/auth/auth_service.py (641 lines) - auth service (shared auth)
 - services/shared/auth/rbac_service.py (687 lines) - Utility for audit logging
+- services/shared/auth/secret_config.py (18 lines) - Validated secret lookup from environment variables with no hardcoded fallbacks.
 - services/shared/auth/service_security_policy.py (241 lines) - Enterprise Application Security & Scope Authorization Policy Defines the strict Application-to-Application Access Matrix (Machine-to-Mach...
 - services/shared/core/audit_service.py (127 lines) - audit service (shared core)
 - services/shared/core/cache_service.py (183 lines) - cache service (shared core)

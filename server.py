@@ -29,10 +29,8 @@ from services.shared.core.logging_service import (
     request_id_ctx,
 )
 from services.shared.core.cache_service import start_cache_invalidation_listener
-from services.shared.auth.auth_service import (
-    current_user_id_ctx,
-    get_current_user_id_dependency,
-)
+from services.shared.auth.auth_service import current_user_id_ctx, get_current_user_id_dependency
+from services.shared.auth.secret_config import require_secret
 
 # FastAPI routers
 from tools.shared.search import router as search_router
@@ -315,7 +313,7 @@ app.include_router(graph_router, prefix="/api", tags=["Microsoft Graph"], depend
 # --- Session Middleware ---
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.environ.get("SESSION_SECRET", "default_session_secret_key_needs_32_characters!"),
+    secret_key=require_secret("SESSION_SECRET"),
     same_site="lax",
     https_only=os.getenv("SESSION_COOKIE_SECURE", "true" if _is_prod else "false").lower() in ("true", "1", "yes"),
     max_age=3600,

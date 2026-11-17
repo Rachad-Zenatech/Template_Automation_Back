@@ -20,7 +20,7 @@ to find the right file.
 | .agents/code-map/services__ai__observability.md | 3 | 3 KB |
 | .agents/code-map/services__microsoft_graph.md | 2 | 2 KB |
 | .agents/code-map/services__notifications.md | 4 | 4 KB |
-| .agents/code-map/services__shared__auth.md | 3 | 3 KB |
+| .agents/code-map/services__shared__auth.md | 4 | 3 KB |
 | .agents/code-map/services__shared__core.md | 3 | 2 KB |
 | .agents/code-map/tools__microsoft_graph.md | 1 | 1 KB |
 | .agents/code-map/tools__notifications.md | 1 | 1 KB |
