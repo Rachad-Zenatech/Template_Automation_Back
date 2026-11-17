@@ -16,20 +16,20 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `_stream_round` (def) L132 - One model turn, streamed.
 - `stream` (def) L186 - The SSE events for a prepared chat.
 
-## services/ai/core/gemini_service.py (123 lines) - gemini service (ai core)
+## services/ai/core/gemini_service.py (128 lines) - gemini service (ai core)
 - `_normalize_ai_model_name` (def) L10 - Normalizes a model name from the environment variable list
-- `get_gemini_fallback_models` (def) L30 - Retrieves and normalizes the list of available Gemini models
-- `is_rotatable_model_error` (def) L48 - Determines if a given exception represents a rate limit, quota exhaustion,
-- `generate_content_with_fallback` (def) L81 - A robust wrapper around client.models.generate_content that automatically
+- `without_retired` (def) L41 - Return models that are not retired, preserving order (or original list if all are retired).
+- `get_gemini_fallback_models` (def) L47 - Retrieves and normalizes the list of available Gemini models
+- `is_rotatable_model_error` (def) L65 - Determines if a given exception represents a rate limit, quota exhaustion,
+- `generate_content_with_fallback` (def) L86 - A robust wrapper around client.models.generate_content that automatically
 
-## services/ai/core/model_router.py (98 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
-- `Route` (class) L45
-- `fallback_models` (def) L51 - Every configured Gemini model (GEMINI_AVAILABLE_MODELS), retired ones left out, in the configured order.
-- `is_rotatable_model_error` (def) L59 - A rate limit, exhausted quota, overloaded or retired model: worth trying the next model.
-- `enabled` (def) L68
-- `tier_models` (def) L72
-- `base_tier` (def) L77
-- `route` (def) L82 - The models to try, in order, for this request, and why that tier was chosen.
+## services/ai/core/model_router.py (85 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
+- `Route` (class) L44
+- `fallback_models` (def) L50 - Every configured Gemini model (GEMINI_AVAILABLE_MODELS), retired ones left out, in priority order.
+- `enabled` (def) L55
+- `tier_models` (def) L59
+- `base_tier` (def) L64
+- `route` (def) L69 - The models to try, in order, for this request, and why that tier was chosen.
 
 ## services/ai/core/semantic_cache.py (205 lines) - Semantic cache: reuses an earlier AI answer when a new question means the same thing, so repeated questions don't spend Gemini quota.
 - `_env_float` (def) L39

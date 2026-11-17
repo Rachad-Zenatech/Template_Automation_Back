@@ -25,7 +25,24 @@ DEPRECATED_MODELS = {
     "gemini-1.5-pro",
     "gemini-1.0-pro",
     "gemini-2.5-pro",
+    # Google answers these with 404 ("no longer available to new users"); trying them only wastes a call and a wait.
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
 }
+
+_ROTATABLE_MESSAGES = (
+    "404", "not found", "no longer available", "not available",
+    "429", "503", "504", "resource_exhausted", "quota exceeded",
+    "too many requests", "unavailable", "high demand", "deadline_exceeded",
+    "deadline expired", "timed out", "is not supported", "invalid model", "deprecated",
+)
+
+
+def without_retired(models):
+    """Return models that are not retired, preserving order (or original list if all are retired)."""
+    kept = [m for m in models if m.strip().lower() not in DEPRECATED_MODELS]
+    return kept or list(models)
+
 
 def get_gemini_fallback_models() -> List[str]:
     """
@@ -33,47 +50,35 @@ def get_gemini_fallback_models() -> List[str]:
     from the environment configuration, filtering out deprecated/retired models.
     Guarantees active, proven general-purpose models are prioritized at the front of the rotation chain.
     """
-    models_str = os.getenv("GEMINI_AVAILABLE_MODELS", "gemini-2.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemini-3.1-pro-preview,gemini-3-flash-preview")
+    models_str = os.getenv("GEMINI_AVAILABLE_MODELS", "gemini-3-flash-preview,gemini-3.1-flash-lite,gemini-3.5-flash-lite,gemini-3.1-pro-preview")
     raw_models = [_normalize_ai_model_name(m) for m in models_str.split(",") if m.strip()]
 
     # Filter out deprecated models that are no longer available in the Google GenAI API
     models = [m for m in raw_models if m not in DEPRECATED_MODELS]
-    priority_order = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-3.1-pro-preview", "gemini-3-flash-preview"]
-    ordered = [m for m in priority_order if m in models or m not in DEPRECATED_MODELS]
+    priority_order = ["gemini-3-flash-preview", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"]
+    ordered = [m for m in priority_order if m in models]
     for m in models:
         if m not in ordered:
             ordered.append(m)
-    return ordered or ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"]
+    return ordered or ["gemini-3-flash-preview", "gemini-3.1-flash-lite"]
 
 def is_rotatable_model_error(e: Exception) -> bool:
     """
     Determines if a given exception represents a rate limit, quota exhaustion,
-    temporary service spike, or deprecated/unavailable model (404 / 503 / 429).
+    temporary service spike, timeout, or deprecated/unavailable model (404 / 503 / 504 / 429).
     """
     if isinstance(e, errors.APIError):
         code = getattr(e, "code", getattr(e, "status", None))
-        if code in (400, 404, 429, 503):
+        if code in (400, 404, 429, 503, 504):
             return True
 
-        msg = str(e).lower()
-        if any(k in msg for k in [
-            "404", "not found", "no longer available", "not available",
-            "429", "503", "resource_exhausted", "quota exceeded",
-            "too many requests", "unavailable", "high demand",
-            "is not supported", "invalid model", "deprecated"
-        ]):
-            return True
-
-    msg = str(e).lower()
-    if any(k in msg for k in [
-        "404", "not found", "no longer available", "not available",
-        "429", "503", "resource_exhausted", "quota exceeded",
-        "too many requests", "unavailable", "high demand",
-        "is not supported", "invalid model", "deprecated"
-    ]):
+    # A model that stopped answering (the request's timeout ran out): try the next one.
+    # (google-genai raises its own httpx timeouts, so match by name).
+    if isinstance(e, TimeoutError) or "Timeout" in type(e).__name__:
         return True
 
-    return False
+    msg = str(e).lower()
+    return any(k in msg for k in _ROTATABLE_MESSAGES)
 
 # Backward compatibility alias
 is_quota_error = is_rotatable_model_error
