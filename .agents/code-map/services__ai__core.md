@@ -16,6 +16,47 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `_stream_round` (def) L132 - One model turn, streamed.
 - `stream` (def) L186 - The SSE events for a prepared chat.
 
+## services/ai/core/bedrock_service.py (373 lines) - AWS Bedrock AI Service Adapter.
+- `is_bedrock_enabled` (def) L20 - Return True if AWS Bedrock credentials and profile ID are configured.
+- `get_bedrock_profile_id` (def) L27
+- `get_bedrock_region` (def) L31
+- `get_bedrock_key` (def) L35
+- `has_ai_key` (def) L39 - Return True if either AWS Bedrock or Google Gemini is configured.
+- `clean_json_fences` (def) L44 - Strip markdown code fences from JSON output so json.loads succeeds.
+- `BedrockPart` (class) L53
+    - `__init__` (def) L54
+- `BedrockContent` (class) L59
+    - `__init__` (def) L60
+- `BedrockCandidate` (class) L64
+    - `__init__` (def) L65
+- `BedrockUsageMetadata` (class) L69
+    - `__init__` (def) L70
+- `BedrockResponse` (class) L75 - Emulates google.genai.types.GenerateContentResponse for downstream services.
+    - `__init__` (def) L78
+    - `text` (def) L87
+- `BedrockStreamChunk` (class) L91 - Single streamed chunk matching the structure expected by assistant_chat_service.
+    - `__init__` (def) L94
+- `_extract_text_and_media` (def) L101 - Convert Gemini contents (strings, Parts, Contents, dicts) into Bedrock content blocks.
+    - `process_item` (def) L105
+- `_build_converse_params` (def) L195 - Translate model, contents, and config into boto3 converse parameters.
+- `BedrockModels` (class) L248 - Mimics client.models on Google GenAI SDK.
+    - `__init__` (def) L251
+    - `generate_content` (def) L254
+- `BedrockStreamIterator` (class) L288
+    - `__init__` (def) L289
+    - `__aiter__` (def) L292
+    - `_iter` (def) L295
+- `BedrockAioModels` (class) L306 - Mimics client.aio.models for streaming calls.
+    - `__init__` (def) L309
+    - `generate_content_stream` (def) L312
+- `BedrockAio` (class) L328
+    - `__init__` (def) L329
+- `BedrockClientAdapter` (class) L333 - Adapter implementing the client interface used by services calling Gemini.
+    - `__init__` (def) L336
+    - `get_boto_client` (def) L341
+- `get_bedrock_client` (def) L357
+- `get_ai_client` (def) L364 - Return Bedrock client if enabled; otherwise Gemini client if GEMINI_API_KEY is present.
+
 ## services/ai/core/gemini_service.py (128 lines) - gemini service (ai core)
 - `_normalize_ai_model_name` (def) L10 - Normalizes a model name from the environment variable list
 - `without_retired` (def) L41 - Return models that are not retired, preserving order (or original list if all are retired).
@@ -23,7 +64,7 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `is_rotatable_model_error` (def) L65 - Determines if a given exception represents a rate limit, quota exhaustion,
 - `generate_content_with_fallback` (def) L86 - A robust wrapper around client.models.generate_content that automatically
 
-## services/ai/core/model_router.py (85 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
+## services/ai/core/model_router.py (91 lines) - Model routing: picks which Gemini models a request tries first, by feature and by how demanding the request is.
 - `Route` (class) L44
 - `fallback_models` (def) L50 - Every configured Gemini model (GEMINI_AVAILABLE_MODELS), retired ones left out, in priority order.
 - `enabled` (def) L55

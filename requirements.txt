@@ -30,3 +30,5 @@ motor>=3.7.0
 
 paho-mqtt>=2.1.0
 aio-pika>=9.5.4
+
+boto3>=1.35.0
