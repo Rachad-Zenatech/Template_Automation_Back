@@ -42,7 +42,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - services/shared/core/logging_service.py (118 lines) - Structured application logging suitable for container stdout and CloudWatch Logs.
 - tools/microsoft_graph/graph_router.py (46 lines) - Graph User Search Router Exposes a search endpoint that proxies Microsoft Graph /v1.0/users?$search=...
 - tools/notifications/notification_router.py (81 lines) - notification router (notifications)
-- tools/shared/auth_router.py (312 lines) - auth router (shared)
+- tools/shared/auth_router.py (311 lines) - auth router (shared)
 - tools/shared/log_router.py (74 lines) - log router (shared)
 - tools/shared/observability.py (75 lines) - observability (shared)
 - tools/shared/rbac_router.py (204 lines) - rbac router (shared)
