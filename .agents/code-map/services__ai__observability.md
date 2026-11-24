@@ -54,7 +54,7 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `writer_loop` (def) L375 - Wait for records and write each burst in one batch; hourly (when idle) apply retention.
 - `list_ai_errors` (def) L400 - Recent AI errors and blocked calls within `hours`, optionally filtered by feature and/or model.
 
-## services/ai/observability/ai_overview_service.py (312 lines) - Combined AI health, feature-to-core mapping, and usage overview for System & Security.
+## services/ai/observability/ai_overview_service.py (331 lines) - Combined AI health, feature-to-core mapping, and usage overview for System & Security.
 - `_has_core` (def) L28
 - `_routing_tier` (def) L32
 - `_features_by_core` (def) L42
@@ -62,7 +62,9 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `_get_ai_health` (def) L59
 - `_get_ai_usage_service` (def) L67
 - `_fetch_usage_aggregates` (def) L75
-- `get_ai_overview` (def) L152
+- `_build_overview_cores` (def) L152
+- `_build_overview_features` (def) L211
+- `get_ai_overview` (def) L272
 
 ## services/ai/observability/ai_usage_service.py (141 lines) - AI Usage Limits Caps how often Gemini runs, so one person (or a stuck loop) can't use up the provider quota or run up cost.
 - `_env_int` (def) L35
