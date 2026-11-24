@@ -67,6 +67,22 @@ def is_rotatable_model_error(e: Exception) -> bool:
     Determines if a given exception represents a rate limit, quota exhaustion,
     temporary service spike, timeout, or deprecated/unavailable model (404 / 503 / 504 / 429).
     """
+    try:
+        from botocore.exceptions import ClientError
+        if isinstance(e, ClientError):
+            code = e.response.get("Error", {}).get("Code", "")
+            if code in (
+                "ThrottlingException",
+                "ModelNotReadyException",
+                "TooManyRequestsException",
+                "ServiceUnavailableException",
+                "AccessDeniedException",
+                "ValidationException",
+                "ResourceNotFoundException",
+            ):
+                return True
+    except ImportError:
+        pass
     if isinstance(e, errors.APIError):
         code = getattr(e, "code", getattr(e, "status", None))
         if code in (400, 404, 429, 503, 504):
@@ -82,6 +98,46 @@ def is_rotatable_model_error(e: Exception) -> bool:
 
 # Backward compatibility alias
 is_quota_error = is_rotatable_model_error
+
+import time
+
+_model_cooldowns: dict[str, float] = {}
+
+
+def _model_failure_cooldown_seconds(error: Exception) -> int:
+    """Avoid retrying a model known to be unavailable while a request burst is in progress."""
+    status_code = str(getattr(error, "code", "") or getattr(error, "status_code", ""))
+    message = f"{status_code} {error}".lower()
+    if any(part in message for part in ("404", "not found", "not available", "resourcenotfound", "accessdenied")):
+        return 300
+    if any(part in message for part in (
+        "429", "500", "503", "504", "resource_exhausted", "quota", "high demand", "deadline",
+        "throttl", "too many requests", "toomanyrequests", "serviceunavailable", "modelnotready",
+    )):
+        return 60
+    if isinstance(error, TimeoutError) or "timeout" in type(error).__name__.lower() or "timed out" in message:
+        return 30
+    if is_rotatable_model_error(error):
+        return 60
+    return 0
+
+
+def model_is_available(model_name: str) -> bool:
+    """Return false while a short provider-failure cooldown for this model is active."""
+    until = _model_cooldowns.get(model_name)
+    if until is None:
+        return True
+    if until > time.monotonic():
+        return False
+    _model_cooldowns.pop(model_name, None)
+    return True
+
+
+def record_model_failure(model_name: str, error: Exception) -> None:
+    cooldown = _model_failure_cooldown_seconds(error)
+    if cooldown:
+        _model_cooldowns[model_name] = time.monotonic() + cooldown
+
 
 async def generate_content_with_fallback(
     client: genai.Client,
@@ -116,6 +172,7 @@ async def generate_content_with_fallback(
         except Exception as e:
             last_exception = e
             if is_rotatable_model_error(e):
+                record_model_failure(model_name, e)
                 logger.warning(f"Gemini model {model_name} unavailable or quota exceeded ({e}). Moving to next model.")
                 continue
             else:
