@@ -39,6 +39,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - services/shared/auth/rbac_service.py (687 lines) - Utility for audit logging
 - services/shared/auth/secret_config.py (18 lines) - Validated secret lookup from environment variables with no hardcoded fallbacks.
 - services/shared/auth/service_security_policy.py (241 lines) - Enterprise Application Security & Scope Authorization Policy Defines the strict Application-to-Application Access Matrix (Machine-to-Mach...
+- services/shared/cookie_origin_protection.py (39 lines) - Reject cross-origin state-changing requests carrying a browser session.
 - services/shared/core/audit_service.py (127 lines) - audit service (shared core)
 - services/shared/core/cache_service.py (183 lines) - cache service (shared core)
 - services/shared/core/logging_service.py (118 lines) - Structured application logging suitable for container stdout and CloudWatch Logs.

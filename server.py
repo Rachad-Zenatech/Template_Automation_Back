@@ -525,13 +525,14 @@ async def request_observability(request: Request, call_next):
         )
     request_id_ctx.reset(token)
     return response
-
-
 # --- CORS Configuration ---
 _cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "") or os.getenv("CORS_ORIGINS", "")
 cors_origins = [orig.strip() for orig in _cors_env.split(",") if orig.strip()] if _cors_env else []
 _cors_regex = None if _is_prod else r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.\d+\.\d+\.\d+)(:\d+)?$"
 
+from services.shared.auth.auth_service import AUTH_COOKIE_NAME
+from services.shared.cookie_origin_protection import CookieOriginProtection
+app.add_middleware(CookieOriginProtection, cookie_names={AUTH_COOKIE_NAME, "zenatech_access_token"}, allowed_origins=cors_origins, allowed_origin_regex=_cors_regex)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -541,7 +542,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-
 if __name__ == "__main__":
     mcp.run(
         transport="streamable-http",
